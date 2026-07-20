@@ -1,7 +1,11 @@
+"use client";
+
 import React, { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, Key, LogOut, Compass, Sparkles, User, Settings, PlusCircle, LayoutDashboard, Info, Mail } from 'lucide-react';
+import clsx from 'clsx';
 
 export const Navbar: React.FC = () => {
   const { user, logout, geminiApiKey, setApiKey } = useAuth();
@@ -9,7 +13,8 @@ export const Navbar: React.FC = () => {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [tempKey, setTempKey] = useState(geminiApiKey);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const handleSaveKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,11 +25,14 @@ export const Navbar: React.FC = () => {
   const handleLogout = () => {
     logout();
     setShowProfileDropdown(false);
-    navigate('/');
+    router.push('/');
   };
 
   const activeClassName = "text-teal-400 font-semibold flex items-center gap-1.5 py-2 px-3 border-b-2 border-teal-500";
   const inactiveClassName = "text-slate-300 hover:text-white hover:bg-slate-800/40 transition-all duration-200 flex items-center gap-1.5 py-2 px-3 rounded-lg";
+
+  const mobileActiveClassName = 'bg-slate-900 text-teal-400 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5';
+  const mobileInactiveClassName = 'text-slate-300 hover:bg-slate-900/60 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5';
 
   const publicLinks = [
     { to: '/', label: 'Home', icon: <Sparkles className="w-4 h-4" /> },
@@ -44,10 +52,10 @@ export const Navbar: React.FC = () => {
       <nav className="sticky top-0 z-50 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/60 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            
+
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="flex items-center gap-2.5 group">
+              <Link href="/" className="flex items-center gap-2.5 group">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform duration-300">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
@@ -63,25 +71,25 @@ export const Navbar: React.FC = () => {
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-1.5">
               {publicLinks.map(link => (
-                <NavLink 
-                  key={link.to} 
-                  to={link.to} 
-                  className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+                <Link
+                  key={link.to}
+                  href={link.to}
+                  className={clsx(pathname === link.to ? activeClassName : inactiveClassName)}
                 >
                   {link.icon}
                   {link.label}
-                </NavLink>
+                </Link>
               ))}
 
               {user && protectedLinks.map(link => (
-                <NavLink 
-                  key={link.to} 
-                  to={link.to} 
-                  className={({ isActive }) => isActive ? activeClassName : inactiveClassName}
+                <Link
+                  key={link.to}
+                  href={link.to}
+                  className={clsx(pathname === link.to ? activeClassName : inactiveClassName)}
                 >
                   {link.icon}
                   {link.label}
-                </NavLink>
+                </Link>
               ))}
             </div>
 
@@ -90,8 +98,8 @@ export const Navbar: React.FC = () => {
               <button
                 onClick={() => { setTempKey(geminiApiKey); setShowKeyModal(true); }}
                 className={`p-2 rounded-lg border transition-all duration-200 ${
-                  geminiApiKey 
-                    ? 'border-teal-500/30 bg-teal-500/5 text-teal-400 hover:bg-teal-500/10' 
+                  geminiApiKey
+                    ? 'border-teal-500/30 bg-teal-500/5 text-teal-400 hover:bg-teal-500/10'
                     : 'border-slate-800 bg-slate-900/50 text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
                 title="Configure Gemini API Key"
@@ -105,9 +113,9 @@ export const Navbar: React.FC = () => {
                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                     className="flex items-center gap-2 p-1.5 rounded-full border border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors"
                   >
-                    <img 
-                      src={user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.email}`} 
-                      alt={user.name} 
+                    <img
+                      src={user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.email}`}
+                      alt={user.name}
                       className="w-7 h-7 rounded-full bg-slate-800 object-cover"
                     />
                     <span className="text-sm font-medium text-slate-300 max-w-[120px] truncate pr-2">
@@ -121,8 +129,8 @@ export const Navbar: React.FC = () => {
                         <p className="text-xs text-slate-500">Signed in as</p>
                         <p className="text-sm font-medium text-white truncate">{user.email}</p>
                       </div>
-                      <Link 
-                        to="/dashboard" 
+                      <Link
+                        href="/dashboard"
                         onClick={() => setShowProfileDropdown(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
                       >
@@ -141,7 +149,7 @@ export const Navbar: React.FC = () => {
                 </div>
               ) : (
                 <Link
-                  to="/login"
+                  href="/login"
                   className="px-5 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-medium hover:brightness-105 active:scale-95 shadow-md shadow-teal-500/10 transition-all duration-200"
                 >
                   Sign In
@@ -174,36 +182,36 @@ export const Navbar: React.FC = () => {
         {isOpen && (
           <div className="md:hidden bg-slate-950 border-t border-slate-900 px-4 py-4 space-y-2 animate-in slide-in-from-top duration-300">
             {publicLinks.map(link => (
-              <NavLink 
-                key={link.to} 
-                to={link.to} 
+              <Link
+                key={link.to}
+                href={link.to}
                 onClick={() => setIsOpen(false)}
-                className={({ isActive }) => isActive ? 'bg-slate-900 text-teal-400 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5' : 'text-slate-300 hover:bg-slate-900/60 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5'}
+                className={pathname === link.to ? mobileActiveClassName : mobileInactiveClassName}
               >
                 {link.icon}
                 {link.label}
-              </NavLink>
+              </Link>
             ))}
 
             {user && protectedLinks.map(link => (
-              <NavLink 
-                key={link.to} 
-                to={link.to} 
+              <Link
+                key={link.to}
+                href={link.to}
                 onClick={() => setIsOpen(false)}
-                className={({ isActive }) => isActive ? 'bg-slate-900 text-teal-400 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5' : 'text-slate-300 hover:bg-slate-900/60 block px-3 py-2 rounded-md font-medium flex items-center gap-2.5'}
+                className={pathname === link.to ? mobileActiveClassName : mobileInactiveClassName}
               >
                 {link.icon}
                 {link.label}
-              </NavLink>
+              </Link>
             ))}
 
             <div className="pt-4 border-t border-slate-800">
               {user ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 px-3 py-2">
-                    <img 
-                      src={user.image} 
-                      alt="" 
+                    <img
+                      src={user.image}
+                      alt=""
                       className="w-9 h-9 rounded-full bg-slate-800 object-cover"
                     />
                     <div>
@@ -221,7 +229,7 @@ export const Navbar: React.FC = () => {
                 </div>
               ) : (
                 <Link
-                  to="/login"
+                  href="/login"
                   onClick={() => setIsOpen(false)}
                   className="w-full block text-center px-4 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-medium transition-colors"
                 >
@@ -242,14 +250,14 @@ export const Navbar: React.FC = () => {
                 <Key className="w-5 h-5 text-teal-400" />
                 Gemini API Key Settings
               </h3>
-              <button 
+              <button
                 onClick={() => setShowKeyModal(false)}
                 className="text-slate-400 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <p className="text-sm text-slate-400 mb-4 leading-relaxed">
               To activate premium AI Trip Generation and context-aware chat, please provide a Google Gemini API Key. If left empty, the application will use the local mock AI engine.
             </p>

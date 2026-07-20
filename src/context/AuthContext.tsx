@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface User {
@@ -27,40 +29,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Load session
     const savedUser = localStorage.getItem('tg_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
-    
-    // Load API key
+
     const savedKey = localStorage.getItem('tg_gemini_api_key');
     if (savedKey) {
       setGeminiApiKey(savedKey);
     } else {
-      // Check env variable
-      const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (envKey) {
         setGeminiApiKey(envKey);
       }
     }
-    
+
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simple mock validation
     if (!email.includes('@') || password.length < 4) {
       return false;
     }
-    
+
     const mockUser: User = {
       id: "usr-" + Date.now(),
       name: email.split('@')[0].toUpperCase(),
       email: email,
       image: `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`
     };
-    
+
     setUser(mockUser);
     localStorage.setItem('tg_user', JSON.stringify(mockUser));
     return true;
@@ -77,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: email,
       image: `https://api.dicebear.com/7.x/adventurer/svg?seed=${name}`
     };
-    
+
     setUser(mockUser);
     localStorage.setItem('tg_user', JSON.stringify(mockUser));
     return true;
@@ -85,9 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const googleLogin = async () => {
     setIsLoading(true);
-    // Simulate a brief redirect/loading window
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     const googleUser: User = {
       id: "usr-google",
       name: "Google Traveler",
@@ -103,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const demoLogin = async () => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     const demoUser: User = {
       id: "usr-demo",
       name: "Alex Mercer",
