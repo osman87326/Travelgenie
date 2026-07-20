@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Compass, Sparkles, MapPin, Star, Shield, Zap, Heart, MessageSquare, Plus, Minus, ArrowRight, Activity, Users, Globe, Trophy } from 'lucide-react';
-import { mockApi, Destination } from '../services/mockApi';
+"use client";
 
-export const LandingPage: React.FC = () => {
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Compass, Sparkles, MapPin, Star, Zap, MessageSquare, Plus, Minus, ArrowRight, Activity, Users, Globe, Trophy } from 'lucide-react';
+import { mockApi, Destination } from '@/services/mockApi';
+
+export default function LandingPage() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    // Simulate brief loading for skeleton
     const timer = setTimeout(() => {
       setDestinations(mockApi.getDestinations().slice(0, 4));
       setLoading(false);
@@ -45,10 +46,9 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="space-y-20 pb-20">
-      
-      {/* 1. Hero Section (60-70% height) */}
+
+      {/* 1. Hero Section */}
       <section className="relative h-[65vh] min-h-[480px] max-h-[620px] flex items-center justify-center overflow-hidden">
-        {/* Background Graphic */}
         <div className="absolute inset-0 bg-slate-950">
           <div className="absolute inset-0 bg-gradient-to-b from-teal-500/10 via-indigo-500/5 to-slate-950" />
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse-slow" />
@@ -74,14 +74,14 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
-              to="/explore"
+              href="/explore"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-semibold hover:shadow-lg hover:shadow-teal-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 group"
             >
               Explore Destinations
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              to="/dashboard"
+              href="/dashboard"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 text-slate-300 hover:text-white font-semibold transition-colors flex items-center justify-center gap-2"
             >
               <Compass className="w-4 h-4" />
@@ -177,7 +177,6 @@ export const LandingPage: React.FC = () => {
                 key={dest.id}
                 className="bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden h-[410px] flex flex-col justify-between hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/5 hover:-translate-y-1 transition-all duration-300 group"
               >
-                {/* Image */}
                 <div className="h-44 w-full relative overflow-hidden bg-slate-800 shrink-0">
                   <img
                     src={dest.imageUrl}
@@ -189,7 +188,6 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Info Content */}
                 <div className="p-5 flex-1 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-1 text-[11px] text-slate-400">
@@ -206,7 +204,6 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Metadata */}
                   <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Avg Cost</p>
@@ -219,7 +216,7 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <Link
-                      to={`/details/${dest.id}`}
+                      href={`/details/${dest.id}`}
                       className="px-3.5 py-1.5 rounded-lg border border-slate-800 hover:border-teal-500/35 hover:bg-teal-500/5 text-xs font-semibold text-slate-300 hover:text-white transition-all"
                     >
                       View Details
@@ -242,11 +239,9 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <div className="relative">
-          {/* Vertical line connecting steps on large screen */}
           <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-800/60 -translate-x-1/2" />
-          
+
           <div className="space-y-12">
-            {/* Step 1 */}
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-0">
               <div className="md:w-1/2 md:pr-12 md:text-right">
                 <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Step 1</span>
@@ -261,7 +256,6 @@ export const LandingPage: React.FC = () => {
               <div className="md:w-1/2 md:pl-12 hidden md:block" />
             </div>
 
-            {/* Step 2 */}
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-0">
               <div className="md:w-1/2 md:pr-12 hidden md:block" />
               <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center z-10 shrink-0 font-bold text-white">
@@ -276,7 +270,6 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Step 3 */}
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-0">
               <div className="md:w-1/2 md:pr-12 md:text-right">
                 <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Step 3</span>
@@ -351,7 +344,7 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed italic">
-              "The ability to edit my itinerary via chat is a game changer. I asked the assistant to shift my itinerary in Kyoto to cheaper sights, and it updated my budget spreadsheet immediately!"
+              The chat-based itinerary editing stood out to this traveler, who described asking the assistant to shift Kyoto sightseeing toward cheaper options and seeing the budget update instantly.
             </p>
           </div>
 
@@ -368,7 +361,7 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed italic">
-              "Planning trips for a family of four is stressful, but the AI recommendation matched our exact interests (Nature + Kid-friendly parks). The visual Recharts graphs kept us completely on budget."
+              Planning for a family of four felt manageable once the AI matched their nature and kid-friendly interests, with the Recharts budget view keeping spending on track.
             </p>
           </div>
 
@@ -385,7 +378,7 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed italic">
-              "Clean UI, zero fluff, and extremely functional. It has everything—Explore catalog, CRUD item adding, and robust AI integrations. Essential for my travel toolkit."
+              A clean, functional toolkit combining the explore catalog, item CRUD, and AI features made this a staple for ongoing travel planning.
             </p>
           </div>
         </div>
@@ -394,7 +387,7 @@ export const LandingPage: React.FC = () => {
       {/* 8. FAQ Accordion */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 space-y-8">
         <h2 className="text-3xl font-bold text-white text-center">Frequently Asked Questions</h2>
-        
+
         <div className="space-y-4">
           {faqs.map((faq, idx) => (
             <div
@@ -412,7 +405,7 @@ export const LandingPage: React.FC = () => {
                   <Plus className="w-5 h-5 text-slate-400 shrink-0" />
                 )}
               </button>
-              
+
               {openFaq === idx && (
                 <div className="p-5 pt-0 text-sm text-slate-400 border-t border-slate-900 bg-slate-950/20 leading-relaxed animate-in fade-in duration-350">
                   {faq.a}
@@ -435,7 +428,7 @@ export const LandingPage: React.FC = () => {
           </p>
           <div className="pt-2">
             <Link
-              to="/login"
+              href="/login"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold active:scale-95 transition-all"
             >
               Sign Up Now
@@ -447,4 +440,4 @@ export const LandingPage: React.FC = () => {
 
     </div>
   );
-};
+}
