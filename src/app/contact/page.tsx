@@ -1,15 +1,17 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { mockApi } from '@/services/mockApi';
 
-export const ContactPage: React.FC = () => {
+export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: ''
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,7 @@ export const ContactPage: React.FC = () => {
     setLoading(true);
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     mockApi.saveContactMessage(formData);
     setLoading(false);
     setIsSubmitted(true);
@@ -45,7 +47,7 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-      
+
       {/* Header */}
       <section className="text-center max-w-2xl mx-auto space-y-4">
         <h1 className="text-4xl font-extrabold text-white tracking-tight">
@@ -57,12 +59,12 @@ export const ContactPage: React.FC = () => {
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Info Sidebar */}
         <div className="space-y-6 lg:col-span-1">
           <div className="glass-card p-6 space-y-6">
             <h3 className="text-lg font-bold text-white">Contact Information</h3>
-            
+
             <div className="space-y-4 text-sm text-slate-400">
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
@@ -222,4 +224,4 @@ export const ContactPage: React.FC = () => {
 
     </div>
   );
-};
+}

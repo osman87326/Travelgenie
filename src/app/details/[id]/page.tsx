@@ -1,11 +1,16 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Compass, MapPin, Star, Calendar, Clock, DollarSign, Award, ChevronRight, User, AlertCircle, Sparkles } from 'lucide-react';
 import { mockApi, type Destination, type Review } from '@/services/mockApi';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 
-export const DetailsPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+export default function DetailsPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
+
   const [dest, setDest] = useState<Destination | undefined>(undefined);
   const [related, setRelated] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +64,7 @@ export const DetailsPage: React.FC = () => {
         comment: reviewComment,
         createdAt: new Date().toISOString()
       };
-      
+
       const updatedDest = mockApi.addReview(dest.id, newReview);
       if (updatedDest) {
         setDest(updatedDest);
@@ -85,7 +90,7 @@ export const DetailsPage: React.FC = () => {
           The requested travel location does not exist in our database or has been deleted.
         </p>
         <Link
-          to="/explore"
+          href="/explore"
           className="inline-block px-5 py-2.5 bg-teal-650 text-white text-xs font-semibold rounded-xl hover:bg-teal-600 transition-colors"
         >
           Return to Explore
@@ -96,12 +101,12 @@ export const DetailsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-      
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-slate-500">
-        <Link to="/" className="hover:text-white transition-colors">Home</Link>
+        <Link href="/" className="hover:text-white transition-colors">Home</Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link to="/explore" className="hover:text-white transition-colors">Explore</Link>
+        <Link href="/explore" className="hover:text-white transition-colors">Explore</Link>
         <ChevronRight className="w-3.5 h-3.5" />
         <span className="text-slate-300 font-semibold truncate max-w-[200px]">{dest.title}</span>
       </nav>
@@ -136,10 +141,10 @@ export const DetailsPage: React.FC = () => {
 
       {/* Main Specs & Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Columns (Description & Specifications) */}
         <div className="lg:col-span-2 space-y-8">
-          
+
           {/* 1. Overview */}
           <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-4">
             <h2 className="text-xl font-bold text-white">Overview & Highlights</h2>
@@ -151,7 +156,7 @@ export const DetailsPage: React.FC = () => {
           {/* 2. Specs / Tabular Information */}
           <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-4">
             <h2 className="text-xl font-bold text-white">Travel Specifications</h2>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-slate-950/50 p-4 border border-slate-900 rounded-xl space-y-1">
                 <Calendar className="w-5 h-5 text-teal-400" />
@@ -182,7 +187,7 @@ export const DetailsPage: React.FC = () => {
           {/* 3. User Reviews List */}
           <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
             <h2 className="text-xl font-bold text-white">Community Reviews ({dest.reviews.length})</h2>
-            
+
             {dest.reviews.length === 0 ? (
               <p className="text-slate-500 text-xs py-2 italic">Be the first to review this destination!</p>
             ) : (
@@ -223,11 +228,11 @@ export const DetailsPage: React.FC = () => {
 
         {/* Right Sidebar (Review Form & Planning prompt CTA) */}
         <div className="space-y-6 lg:col-span-1">
-          
+
           {/* Review Submit Form */}
           <div className="glass-panel rounded-2xl p-6 space-y-4">
             <h3 className="text-lg font-bold text-white">Leave a Review</h3>
-            
+
             {reviewSuccess && (
               <p className="text-xs text-emerald-400 font-semibold animate-pulse">
                 Review submitted successfully!
@@ -307,8 +312,7 @@ export const DetailsPage: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/dashboard"
-              state={{ targetDestination: dest.location }}
+              href={`/dashboard?destination=${encodeURIComponent(dest.location)}`}
               className="block w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs active:scale-98 transition-all shadow-md shadow-indigo-500/10"
             >
               Plan Trip Now
@@ -375,7 +379,7 @@ export const DetailsPage: React.FC = () => {
                     </div>
 
                     <Link
-                      to={`/details/${item.id}`}
+                      href={`/details/${item.id}`}
                       className="px-3.5 py-1.5 rounded-lg border border-slate-800 hover:border-teal-500/35 hover:bg-teal-500/5 text-xs font-semibold text-slate-300 hover:text-white transition-all"
                     >
                       View Details
@@ -390,4 +394,4 @@ export const DetailsPage: React.FC = () => {
 
     </div>
   );
-};
+}
