@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Menu, X, Key, LogOut, Compass, Sparkles, User, Settings, PlusCircle, LayoutDashboard, Info, Mail } from 'lucide-react';
 import clsx from 'clsx';
 
-export const Navbar: React.FC = () => {
+export default function Navbar() {
   const { user, logout, geminiApiKey, setApiKey } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -297,4 +297,4 @@ export const Navbar: React.FC = () => {
       )}
     </>
   );
-};
+}

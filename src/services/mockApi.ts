@@ -79,6 +79,34 @@ export interface ContactMessage {
   createdAt: string;
 }
 
+// --- SSR-safe localStorage wrapper ---
+// Next.js renders on the server first, where `window`/`localStorage` don't exist.
+// Every read/write goes through this helper so nothing crashes during SSR.
+const isBrowser = () => typeof window !== "undefined";
+
+const storage = {
+  get(key: string): string | null {
+    if (!isBrowser()) return null;
+    return localStorage.getItem(key);
+  },
+
+  set(key: string, value: string): void {
+    if (!isBrowser()) return;
+    localStorage.setItem(key, value);
+  }
+};
+
+// Small helper to avoid repeating `JSON.parse(storage.get(key) || fallback)` everywhere
+const readJson = <T>(key: string, fallback: T): T => {
+  const raw = storage.get(key);
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
 // Initial seed data for destinations
 const SEED_DESTINATIONS: Destination[] = [
   {
@@ -169,7 +197,7 @@ const SEED_DESTINATIONS: Destination[] = [
     country: "New Zealand",
     category: "Adventure",
     shortDescription: "The adventure capital of the world, offering bungee jumping, jet boating, and spectacular alpine trails.",
-    fullDescription: "Queenstown, New Zealand, sits on the shores of the South Island’s Lake Wakatipu, set against the dramatic Southern Alps. Renowned for adventure sports, it’s also a base for exploring the region’s historic gold-mining towns and vineyards of Central Otago. There is bungee jumping off Kawarau Gorge Suspension Bridge and jet-boating on the Shotover and Dart rivers.",
+    fullDescription: "Queenstown, New Zealand, sits on the shores of the South Island's Lake Wakatipu, set against the dramatic Southern Alps. Renowned for adventure sports, it's also a base for exploring the region's historic gold-mining towns and vineyards of Central Otago. There is bungee jumping off Kawarau Gorge Suspension Bridge and jet-boating on the Shotover and Dart rivers.",
     priceLevel: "Luxury",
     averageCost: 2800,
     bestSeason: "December to February (Summer) & July-August (Ski)",
@@ -229,7 +257,7 @@ const SEED_DESTINATIONS: Destination[] = [
     country: "Maldives",
     category: "Beach",
     shortDescription: "Relax on powder-white beaches, swim with manta rays, and sleep over crystal-clear lagoons.",
-    fullDescription: "The Maldives is a tropical nation in the Indian Ocean composed of 26 ring-shaped atolls, which are made up of more than 1,000 coral islands. It’s known for its beaches, blue lagoons and extensive reefs. The capital, Malé, has a busy fish market, restaurants and shops on the main road, Majeedhee Magu.",
+    fullDescription: "The Maldives is a tropical nation in the Indian Ocean composed of 26 ring-shaped atolls, which are made up of more than 1,000 coral islands. It's known for its beaches, blue lagoons and extensive reefs. The capital, Malé, has a busy fish market, restaurants and shops on the main road, Majeedhee Magu.",
     priceLevel: "Luxury",
     averageCost: 3200,
     bestSeason: "November to April",
@@ -244,34 +272,40 @@ const SEED_DESTINATIONS: Destination[] = [
   }
 ];
 
-// Helper to initialize LocalStorage collections
+// Helper to initialize localStorage collections (browser-only)
 const initializeDatabase = () => {
-  if (!localStorage.getItem("tg_destinations")) {
-    localStorage.setItem("tg_destinations", JSON.stringify(SEED_DESTINATIONS));
+  if (!isBrowser()) return;
+
+  if (!storage.get("tg_destinations")) {
+    storage.set("tg_destinations", JSON.stringify(SEED_DESTINATIONS));
   }
-  if (!localStorage.getItem("tg_trips")) {
-    localStorage.setItem("tg_trips", JSON.stringify([]));
+  if (!storage.get("tg_trips")) {
+    storage.set("tg_trips", JSON.stringify([]));
   }
-  if (!localStorage.getItem("tg_itineraries")) {
-    localStorage.setItem("tg_itineraries", JSON.stringify([]));
+  if (!storage.get("tg_itineraries")) {
+    storage.set("tg_itineraries", JSON.stringify([]));
   }
-  if (!localStorage.getItem("tg_messages")) {
-    localStorage.setItem("tg_messages", JSON.stringify([]));
+  if (!storage.get("tg_messages")) {
+    storage.set("tg_messages", JSON.stringify([]));
   }
-  if (!localStorage.getItem("tg_contacts")) {
-    localStorage.setItem("tg_contacts", JSON.stringify([]));
+  if (!storage.get("tg_contacts")) {
+    storage.set("tg_contacts", JSON.stringify([]));
   }
 };
 
-initializeDatabase();
+// Only run on the client — this file may be imported during server rendering
+if (isBrowser()) {
+  initializeDatabase();
+}
 
 // --- API Helpers ---
 
 export const mockApi = {
   // Destinations
   getDestinations: (): Destination[] => {
+    if (!isBrowser()) return [];
     initializeDatabase();
-    return JSON.parse(localStorage.getItem("tg_destinations") || "[]");
+    return readJson<Destination[]>("tg_destinations", []);
   },
 
   getDestinationById: (id: string): Destination | undefined => {
@@ -279,7 +313,8 @@ export const mockApi = {
     return list.find(d => d.id === id);
   },
 
-  addDestination: (dest: Omit<Destination, 'id' | 'reviews' | 'createdAt' | 'rating'>): Destination => {
+  addDestination: (dest: Omit<Destination, 'id' | 'reviews' | 'createdAt' | 'rating'>): Destination | undefined => {
+    if (!isBrowser()) return undefined;
     const list = mockApi.getDestinations();
     const newDest: Destination = {
       ...dest,
@@ -289,46 +324,51 @@ export const mockApi = {
       createdAt: new Date().toISOString()
     };
     list.unshift(newDest);
-    localStorage.setItem("tg_destinations", JSON.stringify(list));
+    storage.set("tg_destinations", JSON.stringify(list));
     return newDest;
   },
 
   deleteDestination: (id: string): boolean => {
+    if (!isBrowser()) return false;
     const list = mockApi.getDestinations();
     const filtered = list.filter(d => d.id !== id);
     if (filtered.length === list.length) return false;
-    localStorage.setItem("tg_destinations", JSON.stringify(filtered));
+    storage.set("tg_destinations", JSON.stringify(filtered));
     return true;
   },
 
   addReview: (destId: string, review: Review): Destination | undefined => {
+    if (!isBrowser()) return undefined;
     const list = mockApi.getDestinations();
     const destIndex = list.findIndex(d => d.id === destId);
     if (destIndex === -1) return undefined;
-    
+
     list[destIndex].reviews.push(review);
-    
+
     // Recalculate average rating
     const totalRating = list[destIndex].reviews.reduce((acc, r) => acc + r.rating, 0);
     list[destIndex].rating = parseFloat((totalRating / list[destIndex].reviews.length).toFixed(1));
-    
-    localStorage.setItem("tg_destinations", JSON.stringify(list));
+
+    storage.set("tg_destinations", JSON.stringify(list));
     return list[destIndex];
   },
 
   // Trips & Itineraries
   getTrips: (userId: string): Trip[] => {
-    const list: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+    if (!isBrowser()) return [];
+    const list = readJson<Trip[]>("tg_trips", []);
     return list.filter(t => t.userId === userId);
   },
 
   getTripById: (id: string): Trip | undefined => {
-    const list: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+    if (!isBrowser()) return undefined;
+    const list = readJson<Trip[]>("tg_trips", []);
     return list.find(t => t.id === id);
   },
 
-  createTrip: (trip: Omit<Trip, 'id' | 'activeItineraryId' | 'createdAt'>): Trip => {
-    const list: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+  createTrip: (trip: Omit<Trip, 'id' | 'activeItineraryId' | 'createdAt'>): Trip | undefined => {
+    if (!isBrowser()) return undefined;
+    const list = readJson<Trip[]>("tg_trips", []);
     const newTrip: Trip = {
       ...trip,
       id: "trip-" + Date.now(),
@@ -336,41 +376,45 @@ export const mockApi = {
       createdAt: new Date().toISOString()
     };
     list.unshift(newTrip);
-    localStorage.setItem("tg_trips", JSON.stringify(list));
+    storage.set("tg_trips", JSON.stringify(list));
     return newTrip;
   },
 
   deleteTrip: (id: string): boolean => {
-    const list: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+    if (!isBrowser()) return false;
+    const list = readJson<Trip[]>("tg_trips", []);
     const filtered = list.filter(t => t.id !== id);
     if (filtered.length === list.length) return false;
-    localStorage.setItem("tg_trips", JSON.stringify(filtered));
-    
+    storage.set("tg_trips", JSON.stringify(filtered));
+
     // Clean up itineraries and messages for this trip
-    const itineraries: Itinerary[] = JSON.parse(localStorage.getItem("tg_itineraries") || "[]");
+    const itineraries = readJson<Itinerary[]>("tg_itineraries", []);
     const filteredItin = itineraries.filter(i => i.tripId !== id);
-    localStorage.setItem("tg_itineraries", JSON.stringify(filteredItin));
-    
-    const messages: ChatMessage[] = JSON.parse(localStorage.getItem("tg_messages") || "[]");
+    storage.set("tg_itineraries", JSON.stringify(filteredItin));
+
+    const messages = readJson<ChatMessage[]>("tg_messages", []);
     const filteredMsg = messages.filter(m => m.tripId !== id);
-    localStorage.setItem("tg_messages", JSON.stringify(filteredMsg));
+    storage.set("tg_messages", JSON.stringify(filteredMsg));
 
     return true;
   },
 
   getItineraries: (tripId: string): Itinerary[] => {
-    const list: Itinerary[] = JSON.parse(localStorage.getItem("tg_itineraries") || "[]");
+    if (!isBrowser()) return [];
+    const list = readJson<Itinerary[]>("tg_itineraries", []);
     return list.filter(i => i.tripId === tripId).sort((a, b) => b.version - a.version);
   },
 
   getItineraryById: (id: string): Itinerary | undefined => {
-    const list: Itinerary[] = JSON.parse(localStorage.getItem("tg_itineraries") || "[]");
+    if (!isBrowser()) return undefined;
+    const list = readJson<Itinerary[]>("tg_itineraries", []);
     return list.find(i => i.id === id);
   },
 
-  saveItinerary: (itinerary: Omit<Itinerary, 'id' | 'createdAt'>): Itinerary => {
-    const list: Itinerary[] = JSON.parse(localStorage.getItem("tg_itineraries") || "[]");
-    
+  saveItinerary: (itinerary: Omit<Itinerary, 'id' | 'createdAt'>): Itinerary | undefined => {
+    if (!isBrowser()) return undefined;
+    const list = readJson<Itinerary[]>("tg_itineraries", []);
+
     // If setting active, deactivate others of this trip
     if (itinerary.isActive) {
       list.forEach(i => {
@@ -386,15 +430,15 @@ export const mockApi = {
       createdAt: new Date().toISOString()
     };
     list.unshift(newItinerary);
-    localStorage.setItem("tg_itineraries", JSON.stringify(list));
+    storage.set("tg_itineraries", JSON.stringify(list));
 
     // Update trip's activeItineraryId if active
     if (newItinerary.isActive) {
-      const trips: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+      const trips = readJson<Trip[]>("tg_trips", []);
       const tripIndex = trips.findIndex(t => t.id === newItinerary.tripId);
       if (tripIndex !== -1) {
         trips[tripIndex].activeItineraryId = newItinerary.id;
-        localStorage.setItem("tg_trips", JSON.stringify(trips));
+        storage.set("tg_trips", JSON.stringify(trips));
       }
     }
 
@@ -402,7 +446,8 @@ export const mockApi = {
   },
 
   setActiveItinerary: (tripId: string, itineraryId: string): boolean => {
-    const list: Itinerary[] = JSON.parse(localStorage.getItem("tg_itineraries") || "[]");
+    if (!isBrowser()) return false;
+    const list = readJson<Itinerary[]>("tg_itineraries", []);
     const itineraries = list.filter(i => i.tripId === tripId);
     let found = false;
     itineraries.forEach(i => {
@@ -415,25 +460,29 @@ export const mockApi = {
     });
 
     if (!found) return false;
-    localStorage.setItem("tg_itineraries", JSON.stringify(list));
+    storage.set("tg_itineraries", JSON.stringify(list));
 
-    const trips: Trip[] = JSON.parse(localStorage.getItem("tg_trips") || "[]");
+    const trips = readJson<Trip[]>("tg_trips", []);
     const tripIndex = trips.findIndex(t => t.id === tripId);
     if (tripIndex !== -1) {
       trips[tripIndex].activeItineraryId = itineraryId;
-      localStorage.setItem("tg_trips", JSON.stringify(trips));
+      storage.set("tg_trips", JSON.stringify(trips));
     }
     return true;
   },
 
   // Chat Messages
   getChatMessages: (tripId: string): ChatMessage[] => {
-    const list: ChatMessage[] = JSON.parse(localStorage.getItem("tg_messages") || "[]");
-    return list.filter(m => m.tripId === tripId).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    if (!isBrowser()) return [];
+    const list = readJson<ChatMessage[]>("tg_messages", []);
+    return list
+      .filter(m => m.tripId === tripId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   },
 
-  addChatMessage: (tripId: string, role: 'user' | 'model', content: string): ChatMessage => {
-    const list: ChatMessage[] = JSON.parse(localStorage.getItem("tg_messages") || "[]");
+  addChatMessage: (tripId: string, role: 'user' | 'model', content: string): ChatMessage | undefined => {
+    if (!isBrowser()) return undefined;
+    const list = readJson<ChatMessage[]>("tg_messages", []);
     const newMsg: ChatMessage = {
       id: "msg-" + Date.now() + "-" + Math.floor(Math.random() * 100),
       tripId,
@@ -442,20 +491,21 @@ export const mockApi = {
       createdAt: new Date().toISOString()
     };
     list.push(newMsg);
-    localStorage.setItem("tg_messages", JSON.stringify(list));
+    storage.set("tg_messages", JSON.stringify(list));
     return newMsg;
   },
 
   // Contacts
-  saveContactMessage: (msg: Omit<ContactMessage, 'id' | 'createdAt'>): ContactMessage => {
-    const list: ContactMessage[] = JSON.parse(localStorage.getItem("tg_contacts") || "[]");
+  saveContactMessage: (msg: Omit<ContactMessage, 'id' | 'createdAt'>): ContactMessage | undefined => {
+    if (!isBrowser()) return undefined;
+    const list = readJson<ContactMessage[]>("tg_contacts", []);
     const newMsg: ContactMessage = {
       ...msg,
       id: "contact-" + Date.now(),
       createdAt: new Date().toISOString()
     };
     list.unshift(newMsg);
-    localStorage.setItem("tg_contacts", JSON.stringify(list));
+    storage.set("tg_contacts", JSON.stringify(list));
     return newMsg;
   }
 };
