@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shield, Sparkles, Heart, Compass, Cpu, Code, Database, Eye } from 'lucide-react';
 
-export const AboutPage: React.FC = () => {
+const AboutPage: React.FC = () => {
   const team = [
     {
       name: "Marcus Vance",
@@ -130,3 +130,5 @@ export const AboutPage: React.FC = () => {
     </div>
   );
 };
+
+export default AboutPage;
