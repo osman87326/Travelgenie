@@ -1,218 +1,191 @@
-"use client";
+'use client';
 
-import { useState, FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useApp } from '@/context/AppContext';
+import { Kanban, Mail, Lock, User, PlusCircle } from 'lucide-react';
+import Toast from '@/components/Toast';
+import { signInWithGoogle } from '@/lib/auth-client';
 
-type FormErrors = {
-  name?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-};
-
-export default function RegisterPage() {
+export default function Register() {
+  const { register, isAuthenticated, loadingUser, dbMode } = useApp();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  function validate(): FormErrors {
-    const newErrors: FormErrors = {};
-
-    if (!name.trim()) {
-      newErrors.name = "Name is required.";
+  useEffect(() => {
+    if (!loadingUser && isAuthenticated) {
+      router.push('/dashboard');
     }
+  }, [isAuthenticated, loadingUser, router]);
 
-    if (!email.trim()) {
-      newErrors.email = "Email is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Enter a valid email address.";
-    }
-
-    if (!password) {
-      newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
-    }
-
-    if (confirmPassword !== password) {
-      newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    return newErrors;
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setServerError(null);
-
-    const validationErrors = validate();
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
-
-    setIsSubmitting(true);
-
+  const handleGoogleSignIn = async () => {
+    setErrorMsg('');
+    setGoogleLoading(true);
     try {
-      // Replace this with your real registration endpoint
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Registration failed. Please try again.");
-      }
-
-      router.push("/dashboard");
-    } catch (err) {
-      setServerError(
-        err instanceof Error ? err.message : "Something went wrong. Please try again."
-      );
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setErrorMsg('Google sign-in could not be started. Please check your OAuth configuration.');
     } finally {
-      setIsSubmitting(false);
+      setGoogleLoading(false);
     }
-  }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email || !password) {
+      setErrorMsg('Please populate all inputs.');
+      return;
+    }
+    if (password.length < 6) {
+      setErrorMsg('Password should be at least 6 characters.');
+      return;
+    }
+    setErrorMsg('');
+    setLoading(true);
+
+    const success = await register(name, email, password);
+    setLoading(false);
+    if (!success) {
+      setErrorMsg('Registration failed. Email might already be registered.');
+    }
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Start planning smarter trips with Travelgenie.
+    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      
+      {/* Background gradients */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.15),transparent_60%)]" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-violet-600/10 blur-3xl" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-indigo-600/10 blur-3xl" />
+
+      <div className="max-w-md w-full space-y-8 z-10">
+        
+        {/* Logo header */}
+        <div className="text-center">
+          <Link href="/" className="inline-flex items-center gap-2 mb-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/20">
+              <Kanban className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-white">
+              Zen<span className="text-indigo-400">Board</span>
+            </span>
+          </Link>
+          <h2 className="text-2xl font-black text-slate-100">Create your workspace profile</h2>
+          <p className="mt-2 text-xs text-slate-400">
+            Already have a profile?{' '}
+            <Link href="/login" className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+              sign in here
+            </Link>
           </p>
         </div>
 
-        {serverError && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            {serverError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Full name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? "border-red-400" : "border-gray-300"
-              }`}
-              placeholder="Jane Doe"
-            />
-            {errors.name && (
-              <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+        {/* Card wrapper */}
+        <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 shadow-2xl glass">
+          
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {errorMsg && (
+              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs font-medium text-rose-300 text-center">
+                {errorMsg}
+              </div>
             )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.email ? "border-red-400" : "border-gray-300"
-              }`}
-              placeholder="jane@example.com"
-            />
-            {errors.email && (
-              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`w-full rounded-lg border px-3 py-2 pr-16 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.password ? "border-red-400" : "border-gray-300"
-                }`}
-                placeholder="At least 8 characters"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-blue-600 hover:text-blue-700"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">Full Name</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <User className="w-4 h-4" />
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-900/60 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
             </div>
-            {errors.password && (
-              <p className="mt-1 text-xs text-red-600">{errors.password}</p>
-            )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="mb-1 block text-sm font-medium text-gray-700"
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">Email Address</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <Mail className="w-4 h-4" />
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-900/60 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">Password</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="•••••••• (min 6 chars)"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-900/60 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center items-center gap-1.5 h-11 rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              Confirm password
-            </label>
-            <input
-              id="confirmPassword"
-              type={showPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.confirmPassword ? "border-red-400" : "border-gray-300"
-              }`}
-              placeholder="Re-enter your password"
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>
-            )}
+              <PlusCircle className="w-4 h-4" />
+              {loading ? 'Registering...' : 'Register Profile'}
+            </button>
+          </form>
+
+          <div className="mt-4">
+            <div className="relative mb-3">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                <span className="bg-slate-950/40 px-2">or continue with</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="w-full flex justify-center items-center gap-2 h-11 rounded-xl border border-slate-700 bg-slate-900/60 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <path fill="#4285F4" d="M21.6 12.23c0-.78-.07-1.53-.2-2.25H12v4.26h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.9-1.75 2.98-4.33 2.98-7.53Z" />
+                <path fill="#34A853" d="M12 22c2.7 0 4.96-.89 6.62-2.42l-3.24-2.5c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.07v2.58A10 10 0 0 0 12 22Z" />
+                <path fill="#FBBC05" d="M6.41 13.92A6.01 6.01 0 0 1 6.41 10.08V7.5H3.07a10 10 0 0 0 0 12.84l3.34-2.42Z" />
+                <path fill="#EA4335" d="M12 6.04c1.47 0 2.8.5 3.84 1.49l2.88-2.88A9.96 9.96 0 0 0 12 2a10 10 0 0 0-8.93 5.5l3.34 2.58C7.2 7.8 9.4 6.04 12 6.04Z" />
+              </svg>
+              {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            </button>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Creating account..." : "Create account"}
-          </button>
-        </form>
+        </div>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
-            Sign in
-          </Link>
-        </p>
       </div>
+      <Toast />
     </div>
   );
 }
