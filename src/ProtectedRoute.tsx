@@ -1,25 +1,36 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+"use client";
 
-export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+import { ReactNode, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export default function ProtectedRoute({
+  children,
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0b0f19]">
-        <div className="relative flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full border-2 border-teal-500/20 border-t-teal-500 animate-spin"></div>
-          <p className="mt-4 text-slate-400 font-medium animate-pulse">Verifying credentials...</p>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        Loading...
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return null;
   }
 
   return <>{children}</>;
-};
+}
