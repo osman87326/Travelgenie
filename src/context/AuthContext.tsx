@@ -12,6 +12,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  image?: string;
 } | null;
 
 type AuthContextType = {
@@ -19,13 +20,18 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  geminiApiKey: string;
+  setApiKey: (key: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const GEMINI_API_KEY_STORAGE_KEY = "travelgenie_gemini_api_key";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [geminiApiKey, setGeminiApiKey] = useState<string>("");
 
   useEffect(() => {
     async function loadUser() {
@@ -42,6 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     loadUser();
+
+    try {
+      const storedKey = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
+      if (storedKey) {
+        setGeminiApiKey(storedKey);
+      }
+    } catch {
+      // localStorage unavailable (e.g. SSR or privacy mode); ignore.
+    }
   }, []);
 
   async function login(email: string, password: string) {
@@ -63,8 +78,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  function setApiKey(key: string) {
+    setGeminiApiKey(key);
+    try {
+      if (key) {
+        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
+      } else {
+        localStorage.removeItem(GEMINI_API_KEY_STORAGE_KEY);
+      }
+    } catch {
+      // localStorage unavailable; the key still lives in state for this session.
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, logout, geminiApiKey, setApiKey }}
+    >
       {children}
     </AuthContext.Provider>
   );
