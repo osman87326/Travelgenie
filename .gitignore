@@ -14,12 +14,13 @@
 .env.development.local
 .env.production.local
 .env*.local
+node_modules
+.next
+dist
+out
 .env
 .env.local
-.env.development.local
-.env.production.local
-.next
-node_modules
+.env.production
 # Vercel
 .vercel
 
